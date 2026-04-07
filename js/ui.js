@@ -12,7 +12,7 @@ import {
 
 import { CATEGORIES, ALL_FURNITURE, getFurnitureInfo } from './furniture-catalog.js';
 import { zoomIn, zoomOut, fitToContent, getCanvas } from './canvas2d.js';
-import { init3D, refresh3D, resetCamera } from './renderer3d.js';
+import { init3D, refresh3D, resetCamera, topView } from './renderer3d.js';
 
 // ---- BUILD FURNITURE CATALOG ----
 
@@ -112,9 +112,23 @@ export function initToolbar() {
     });
   });
 
-  // 2D / 3D toggle
-  document.getElementById('btn-2d').addEventListener('click', () => switchMode('2d'));
-  document.getElementById('btn-3d').addEventListener('click', () => switchMode('3d'));
+  // 2D / 3D / Split toggle
+  document.getElementById('btn-2d').addEventListener('click', () => {
+    state.splitView = false;
+    switchMode('2d');
+  });
+  document.getElementById('btn-3d').addEventListener('click', () => {
+    state.splitView = false;
+    switchMode('3d');
+  });
+  document.getElementById('btn-split').addEventListener('click', () => {
+    state.splitView = !state.splitView;
+    if (state.splitView) {
+      switchMode('split');
+    } else {
+      switchMode('2d');
+    }
+  });
 
   // Undo / Redo
   document.getElementById('btn-undo').addEventListener('click', () => {
@@ -240,32 +254,82 @@ function updateUndoRedoBtns() {
 // ---- MODE SWITCH ----
 
 function switchMode(mode) {
-  setMode(mode);
-
-  const canvas2d = document.getElementById('canvas-2d');
+  // mode: '2d' | '3d' | 'split'
+  const area     = document.getElementById('canvas-area');
+  const pane2d   = document.getElementById('pane-2d');
+  const pane3d   = document.getElementById('pane-3d');
   const cont3d   = document.getElementById('container-3d');
   const hint3d   = document.getElementById('view3d-hint');
+  const btn2d    = document.getElementById('btn-2d');
+  const btn3d    = document.getElementById('btn-3d');
+  const btnSplit = document.getElementById('btn-split');
 
-  const btn2d = document.getElementById('btn-2d');
-  const btn3d = document.getElementById('btn-3d');
+  // Reset all
+  area.classList.remove('split-active', 'mode-3d');
+  btn2d.classList.remove('active');
+  btn3d.classList.remove('active');
+  btnSplit.classList.remove('active');
+  if (hint3d) hint3d.classList.add('hidden');
 
   if (mode === '2d') {
-    canvas2d.classList.remove('hidden');
-    cont3d.classList.add('hidden');
-    hint3d.classList.add('hidden');
+    setMode('2d');
+    state.splitView = false;
     btn2d.classList.add('active');
-    btn3d.classList.remove('active');
-  } else {
-    canvas2d.classList.add('hidden');
-    cont3d.classList.remove('hidden');
-    hint3d.classList.remove('hidden');
-    btn2d.classList.remove('active');
+    pane3d.classList.add('hidden');
+    pane2d.classList.remove('hidden');
+  } else if (mode === '3d') {
+    setMode('3d');
+    state.splitView = false;
     btn3d.classList.add('active');
-
-    // Initialize or refresh 3D
+    area.classList.add('mode-3d');
+    pane2d.classList.add('hidden');
+    pane3d.classList.remove('hidden');
+    if (hint3d) hint3d.classList.remove('hidden');
     init3D(cont3d);
     refresh3D();
+    // Add 3D overlay controls
+    inject3DControls(pane3d, cont3d);
+  } else if (mode === 'split') {
+    setMode('2d'); // 2D remains active for editing
+    state.splitView = true;
+    btnSplit.classList.add('active');
+    area.classList.add('split-active');
+    pane2d.classList.remove('hidden');
+    pane3d.classList.remove('hidden');
+    // Init 3D in right pane
+    init3D(cont3d);
+    refresh3D();
+    inject3DControls(pane3d, cont3d);
+    // Show realtime badge
+    injectRealtimeBadge(pane3d);
+    // Real-time: subscribe to state changes → rebuild 3D
+    subscribe(() => {
+      if (state.splitView) {
+        requestAnimationFrame(() => refresh3D());
+      }
+    });
   }
+}
+
+function inject3DControls(pane, cont3d) {
+  if (pane.querySelector('.view3d-controls')) return;
+  const div = document.createElement('div');
+  div.className = 'view3d-controls';
+  div.innerHTML = `
+    <button class="view3d-ctrl-btn" id="btn-reset-cam" title="Reset camera">⌂</button>
+    <button class="view3d-ctrl-btn" id="btn-cam-top"   title="Top view">⊙</button>
+  `;
+  pane.appendChild(div);
+  div.querySelector('#btn-reset-cam').addEventListener('click', () => resetCamera());
+  div.querySelector('#btn-cam-top').addEventListener('click', () => topView());
+}
+
+function injectRealtimeBadge(pane) {
+  if (pane.querySelector('.realtime-badge')) return;
+  const div = document.createElement('div');
+  div.className = 'realtime-badge';
+  div.innerHTML = '<div class="realtime-dot"></div> Realtime 3D';
+  pane.appendChild(div);
 }
 
 // ---- PROPERTIES PANEL ----

@@ -79,6 +79,13 @@
           </svg>
           3D มุมมอง
         </button>
+        <button class="view-btn" id="btn-split">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="1" y="2" width="8" height="16" rx="1"/>
+            <rect x="11" y="2" width="8" height="16" rx="1"/>
+          </svg>
+          Split
+        </button>
       </div>
 
       <div class="header-sep"></div>
@@ -152,11 +159,19 @@
     <!-- CENTER: Canvas Area -->
     <div class="canvas-area" id="canvas-area">
 
-      <!-- 2D Canvas -->
-      <canvas id="canvas-2d"></canvas>
-
-      <!-- 3D Container -->
-      <div id="container-3d" class="hidden"></div>
+      <!-- Split wrapper (used for split-view mode) -->
+      <div class="split-wrapper" id="split-wrapper">
+        <!-- 2D pane -->
+        <div class="split-pane" id="pane-2d">
+          <canvas id="canvas-2d"></canvas>
+          <div class="pane-label">2D แปลน</div>
+        </div>
+        <!-- 3D pane -->
+        <div class="split-pane hidden" id="pane-3d">
+          <div id="container-3d" style="width:100%;height:100%;"></div>
+          <div class="pane-label">3D มุมมอง · ลากหมุน · Scroll ซูม</div>
+        </div>
+      </div>
 
       <!-- Placement hint -->
       <div class="placement-hint hidden" id="placement-hint">

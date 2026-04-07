@@ -24,6 +24,8 @@ export const state = {
   },
   // Wall drawing (multi-click)
   wallPoints: [],
+  // Split view
+  splitView: false,
 };
 
 const listeners = new Set();
