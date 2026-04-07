@@ -134,8 +134,64 @@ export function initToolbar() {
     }
   });
 
-  // Export
+  // Export PNG
   document.getElementById('btn-export').addEventListener('click', exportPNG);
+
+  // Save JSON
+  document.getElementById('btn-save-json').addEventListener('click', () => {
+    const data = JSON.stringify({ version: '1.0', elements: state.elements }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = `floorplan_${new Date().toISOString().slice(0, 10)}.json`;
+    a.href = url;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Load JSON
+  document.getElementById('btn-load-json').addEventListener('click', () => {
+    document.getElementById('file-input-json').click();
+  });
+
+  document.getElementById('file-input-json').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        const elements = Array.isArray(data) ? data : (data.elements || []);
+        clearAll();
+        for (const el of elements) state.elements.push(el);
+        notify();
+        fitToContent();
+      } catch (err) {
+        alert('ไม่สามารถเปิดไฟล์ได้: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // Ctrl+S → save
+  window.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      document.getElementById('btn-save-json').click();
+    }
+  });
+
+  // Grid size selector
+  const gridSel = document.getElementById('grid-size-select');
+  if (gridSel) {
+    gridSel.addEventListener('change', e => {
+      state.gridSize = Number(e.target.value);
+      const gridEl = document.getElementById('status-grid');
+      if (gridEl) gridEl.textContent = `กริด: ${state.gridSize} ซม.`;
+      notify();
+    });
+  }
 
   // Zoom controls
   document.getElementById('btn-zoom-in').addEventListener('click', zoomIn);

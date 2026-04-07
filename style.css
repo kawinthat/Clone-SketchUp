@@ -738,3 +738,57 @@ html, body {
 .canvas-area.tool-erase   #canvas-2d { cursor: cell; }
 .canvas-area.tool-select  #canvas-2d { cursor: default; }
 .canvas-area.tool-furniture #canvas-2d { cursor: copy; }
+
+/* Grid size selector */
+.grid-size-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grid-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.grid-select {
+  padding: 4px 6px;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-family: var(--font-thai);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.grid-select:focus { border-color: var(--accent); }
+
+/* Scale bar */
+.scale-bar {
+  position: absolute;
+  bottom: 36px;
+  left: 36px;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: 'Inter', monospace;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.scale-line {
+  display: inline-block;
+  height: 3px;
+  background: #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #fff;
+  border-top: 2px solid #fff;
+  vertical-align: middle;
+}

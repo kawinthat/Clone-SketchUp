@@ -26,6 +26,7 @@ let isPanning = false;
 let panStart = { x: 0, y: 0 };
 let panStartOffset = { x: 0, y: 0 };
 let ghostRotation = 0; // 0|90|180|270
+let copiedElement = null;
 
 export function initCanvas2D(canvasEl) {
   canvas = canvasEl;
@@ -113,6 +114,9 @@ function render() {
 
   // Compass
   drawCompass();
+
+  // Ruler (drawn last so it overlays everything)
+  drawRuler();
 }
 
 function drawGrid() {
@@ -175,44 +179,132 @@ function drawGrid() {
 
 function drawRoom(room) {
   const { zoom, panX, panY } = state;
+  const RULER = 22;
   const sx = room.x * zoom + panX;
   const sy = room.y * zoom + panY;
   const sw = room.width  * zoom;
   const sh = room.depth  * zoom;
-  const wt = (room.wallThickness || 15) * zoom;
+  const wt = Math.max(2, (room.wallThickness || 15) * zoom);
+
+  const isSelected = room.id === state.selectedId;
 
   // Floor fill
   ctx.fillStyle = room.color || '#DCEEFB';
   ctx.fillRect(sx, sy, sw, sh);
 
-  // Wall fill (border-like walls)
-  ctx.fillStyle = room.wallColor || '#D0C8B8';
-  ctx.strokeStyle = room.wallColor || '#B0A898';
-  ctx.lineWidth = Math.max(2, wt);
+  // Walls (thick stroke)
+  ctx.strokeStyle = isSelected ? '#0099DD' : (room.wallColor || '#B0A090');
+  ctx.lineWidth = wt;
   ctx.strokeRect(sx, sy, sw, sh);
 
   // Room label
   if (sw > 50 && sh > 30) {
     const label = room.label || 'ห้อง';
-    ctx.fillStyle = 'rgba(60,50,40,0.7)';
+    ctx.fillStyle = 'rgba(60,50,40,0.65)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const fontSize = Math.min(14, Math.max(8, sw / (label.length * 0.8)));
-    ctx.font = `500 ${fontSize}px 'Noto Sans Thai', sans-serif`;
+    const fontSize = Math.min(14, Math.max(8, Math.min(sw, sh) / 6));
+    ctx.font = `600 ${fontSize}px 'Noto Sans Thai', sans-serif`;
     ctx.fillText(label, sx + sw / 2, sy + sh / 2);
   }
 
-  // Dimension labels
-  if (zoom >= 0.6) {
-    drawDimensionLabel(
-      sx + sw / 2, sy - 12,
-      `${room.width} ซม.`, 'h',
-    );
-    drawDimensionLabel(
-      sx + sw + 12, sy + sh / 2,
-      `${room.depth} ซม.`, 'v',
+  // Dimension arrows (always visible when zoomed enough)
+  if (zoom >= 0.4) {
+    const arrowOffset = Math.max(18, wt / 2 + 14);
+
+    // Horizontal dimension (above room)
+    if (sy - arrowOffset > RULER + 10) {
+      drawDimArrow(
+        sx, sy - arrowOffset,
+        sx + sw, sy - arrowOffset,
+        `${room.width} ซม.`,
+      );
+    } else {
+      // Below room if no space above
+      drawDimArrow(
+        sx, sy + sh + arrowOffset,
+        sx + sw, sy + sh + arrowOffset,
+        `${room.width} ซม.`,
+      );
+    }
+
+    // Vertical dimension (right of room)
+    drawDimArrow(
+      sx + sw + arrowOffset, sy,
+      sx + sw + arrowOffset, sy + sh,
+      `${room.depth} ซม.`,
     );
   }
+}
+
+function drawDimArrow(x1, y1, x2, y2, text) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 20) return;
+
+  const ux = dx / len, uy = dy / len;
+  const arrowSize = 7;
+
+  ctx.save();
+  ctx.strokeStyle = '#E53935';
+  ctx.fillStyle = '#E53935';
+  ctx.lineWidth = 1.5;
+
+  // Main line
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  // Arrowheads
+  function arrowhead(ax, ay, dirX, dirY) {
+    const px = -dirY, py = dirX;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax - dirX * arrowSize + px * arrowSize * 0.4, ay - dirY * arrowSize + py * arrowSize * 0.4);
+    ctx.lineTo(ax - dirX * arrowSize - px * arrowSize * 0.4, ay - dirY * arrowSize - py * arrowSize * 0.4);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  arrowhead(x1, y1, -ux, -uy);
+  arrowhead(x2, y2, ux, uy);
+
+  // Tick marks at ends
+  const perpX = -uy * 5, perpY = ux * 5;
+  ctx.beginPath();
+  ctx.moveTo(x1 + perpX, y1 + perpY);
+  ctx.lineTo(x1 - perpX, y1 - perpY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2 + perpX, y2 + perpY);
+  ctx.lineTo(x2 - perpX, y2 - perpY);
+  ctx.stroke();
+
+  // Label at midpoint
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const isVertical = Math.abs(dy) > Math.abs(dx);
+
+  ctx.font = 'bold 10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(text).width;
+  const pad = 4;
+
+  ctx.save();
+  if (isVertical) { ctx.translate(mx, my); ctx.rotate(-Math.PI / 2); }
+  else ctx.translate(mx, my);
+
+  ctx.fillStyle = '#E53935';
+  ctx.beginPath();
+  ctx.roundRect(-(tw / 2 + pad), -8, tw + pad * 2, 16, 4);
+  ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.fillText(text, 0, 0.5);
+  ctx.restore();
+
+  ctx.restore();
 }
 
 function drawWall(wall) {
@@ -474,34 +566,110 @@ function drawWallPreview() {
 
 function drawDimensionLabel(cx, cy, text, orientation) {
   ctx.save();
-  ctx.font = 'bold 10px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
 
-  if (orientation === 'v') {
+  const isV = orientation === 'v';
+  if (isV) {
     ctx.translate(cx, cy);
     ctx.rotate(-Math.PI / 2);
     cx = 0; cy = 0;
+  } else {
+    ctx.translate(cx, cy);
+    cx = 0; cy = 0;
   }
 
+  ctx.font = 'bold 10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   const tw = ctx.measureText(text).width;
-  const pad = 4;
-  const bx = (orientation === 'v' ? 0 : cx) - tw / 2 - pad;
-  const by = (orientation === 'v' ? 0 : cy) - 8;
+  const pad = 5;
+  const bw = tw + pad * 2;
+  const bh = 15;
 
-  ctx.fillStyle = 'rgba(255,80,30,0.85)';
+  // Pill background
+  ctx.fillStyle = '#E53935';
   ctx.beginPath();
-  ctx.roundRect(bx, by, tw + pad * 2, 16, 3);
+  ctx.roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2);
   ctx.fill();
 
+  // Text
   ctx.fillStyle = '#fff';
-  ctx.fillText(text, orientation === 'v' ? 0 : cx, orientation === 'v' ? 0 : cy);
+  ctx.fillText(text, 0, 0.5);
 
   ctx.restore();
 }
 
+function drawRuler() {
+  const { zoom, panX, panY } = state;
+  const W = canvas.width, H = canvas.height;
+  const RULER = 22;
+
+  // Backgrounds
+  ctx.fillStyle = '#2e3033';
+  ctx.fillRect(RULER, 0, W - RULER, RULER);    // top
+  ctx.fillRect(0, RULER, RULER, H - RULER);   // left
+  ctx.fillStyle = '#1a1c1e';
+  ctx.fillRect(0, 0, RULER, RULER); // corner
+
+  // Corner label
+  ctx.fillStyle = '#666';
+  ctx.font = '8px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('cm', RULER / 2, RULER / 2);
+
+  // Determine tick spacing based on zoom
+  // We want ticks every 50, 100, or 500 cm depending on zoom
+  let tickCm = 50;
+  const pixPerCm = zoom;
+  if (pixPerCm * 50 < 5)   tickCm = 500;
+  else if (pixPerCm * 50 < 15) tickCm = 100;
+
+  const textEvery = tickCm * (pixPerCm * tickCm < 40 ? 5 : 2);
+
+  // Horizontal ruler
+  const startCmX = Math.floor((-panX / zoom) / tickCm) * tickCm;
+  ctx.fillStyle = '#888';
+  ctx.font = '9px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  for (let cm = startCmX; cm < (W - panX) / zoom; cm += tickCm) {
+    const sx = cm * zoom + panX;
+    if (sx < RULER || sx > W) continue;
+    const isMajor = cm % textEvery === 0;
+    const tickH = isMajor ? 10 : 5;
+    ctx.fillStyle = isMajor ? '#aaa' : '#666';
+    ctx.fillRect(sx, RULER - tickH, 0.5, tickH);
+    if (isMajor) {
+      ctx.fillStyle = '#aaa';
+      ctx.fillText(cm, sx, RULER - 11);
+    }
+  }
+
+  // Vertical ruler
+  const startCmY = Math.floor((-panY / zoom) / tickCm) * tickCm;
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let cm = startCmY; cm < (H - panY) / zoom; cm += tickCm) {
+    const sy = cm * zoom + panY;
+    if (sy < RULER || sy > H) continue;
+    const isMajor = cm % textEvery === 0;
+    const tickW = isMajor ? 10 : 5;
+    ctx.fillStyle = isMajor ? '#aaa' : '#666';
+    ctx.fillRect(RULER - tickW, sy, tickW, 0.5);
+    if (isMajor) {
+      ctx.save();
+      ctx.translate(RULER - 12, sy);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = '#aaa';
+      ctx.textAlign = 'center';
+      ctx.fillText(cm, 0, 0);
+      ctx.restore();
+    }
+  }
+}
+
 function drawCompass() {
-  const x = 30, y = 30, r = 18;
+  const x = 36, y = 36, r = 16;
   ctx.save();
   ctx.translate(x, y);
 
@@ -809,6 +977,33 @@ function onKeyDown(e) {
     case 'g': case 'G':
       state.snapEnabled = !state.snapEnabled;
       document.getElementById('snap-toggle').checked = state.snapEnabled;
+      break;
+    case 'c':
+    case 'C':
+      if (e.ctrlKey || e.metaKey) {
+        const sel = getSelected();
+        if (sel) { copiedElement = JSON.parse(JSON.stringify(sel)); }
+      }
+      break;
+    case 'v':
+    case 'V':
+      if ((e.ctrlKey || e.metaKey) && copiedElement) {
+        const clone = { ...copiedElement, id: newId(), x: (copiedElement.x || 0) + 30, y: (copiedElement.y || 0) + 30 };
+        addElement(clone);
+        select(clone.id);
+      }
+      break;
+    case 'ArrowLeft':
+      if (state.selectedId) { const el = getSelected(); if (el && el.x !== undefined) updateElement(el.id, { x: el.x - state.gridSize }); }
+      break;
+    case 'ArrowRight':
+      if (state.selectedId) { const el = getSelected(); if (el && el.x !== undefined) updateElement(el.id, { x: el.x + state.gridSize }); }
+      break;
+    case 'ArrowUp':
+      if (state.selectedId) { const el = getSelected(); if (el && el.y !== undefined) updateElement(el.id, { y: el.y - state.gridSize }); }
+      break;
+    case 'ArrowDown':
+      if (state.selectedId) { const el = getSelected(); if (el && el.y !== undefined) updateElement(el.id, { y: el.y + state.gridSize }); }
       break;
   }
   scheduleRender();

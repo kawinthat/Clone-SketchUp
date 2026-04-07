@@ -82,6 +82,18 @@
       </div>
 
       <div class="header-sep"></div>
+      <div class="grid-size-group">
+        <label class="grid-label">กริด:</label>
+        <select id="grid-size-select" class="grid-select">
+          <option value="10">10 ซม.</option>
+          <option value="25">25 ซม.</option>
+          <option value="50" selected>50 ซม.</option>
+          <option value="100">100 ซม.</option>
+          <option value="200">200 ซม.</option>
+        </select>
+      </div>
+
+      <div class="header-sep"></div>
 
       <!-- Actions -->
       <div class="header-actions">
@@ -100,6 +112,21 @@
             <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
           </svg>
         </button>
+        <button class="action-btn" id="btn-save-json" title="บันทึกแปลน (Ctrl+S)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <polyline points="17,21 17,13 7,13 7,21"/>
+            <polyline points="7,3 7,8 15,8"/>
+          </svg>
+          บันทึก
+        </button>
+        <button class="action-btn" id="btn-load-json" title="เปิดแปลน">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+          </svg>
+          เปิด
+        </button>
+        <input type="file" id="file-input-json" accept=".json" style="display:none">
         <button class="action-btn primary" id="btn-export">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
@@ -161,7 +188,7 @@
         <span class="dot">·</span>
         <span id="status-grid">กริด: 50ซม.</span>
         <span class="dot">·</span>
-        <span id="status-hint">เลือกเครื่องมือหรือวาดห้องเพื่อเริ่มต้น</span>
+        <span id="status-hint">เลือก V · ห้อง R · กำแพง W · ลบ E · Ctrl+C/V คัดลอก · Shift+? ช่วยเหลือ</span>
         <span class="dot">·</span>
         <span id="status-count">0 องค์ประกอบ</span>
       </div>
