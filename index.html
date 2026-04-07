@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FloorPlan Pro - ออกแบบแปลนออนไลน์</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <svg class="brand-logo" viewBox="0 0 32 32" width="28" height="28" fill="none">
+        <rect x="2" y="2" width="28" height="28" rx="6" fill="#0090cc"/>
+        <path d="M8 22L16 10l8 12H8z" fill="white" opacity="0.9"/>
+        <rect x="10" y="18" width="12" height="2" fill="white" opacity="0.6"/>
+      </svg>
+      <span class="brand-name">FloorPlan Pro</span>
+      <span class="brand-version">v1.0</span>
+    </div>
+
+    <div class="header-toolbar">
+      <!-- Tools -->
+      <div class="tool-group" id="tool-group">
+        <button class="tool-btn active" data-tool="select" title="เลือก (V)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M5.5 3.21V20.8c0 .45.54.67.85.35l4.86-4.86h6.39c.45 0 .67-.54.35-.85L5.67 2.85c-.32-.31-.87-.1-.87.36z"/>
+          </svg>
+          <span>เลือก</span>
+        </button>
+        <button class="tool-btn" data-tool="room" title="วาดห้อง (R)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="1"/>
+          </svg>
+          <span>ห้อง</span>
+        </button>
+        <button class="tool-btn" data-tool="wall" title="วาดกำแพง (W)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="7" x2="3" y2="17"/>
+            <line x1="21" y1="7" x2="21" y2="17"/>
+          </svg>
+          <span>กำแพง</span>
+        </button>
+        <button class="tool-btn" data-tool="erase" title="ลบ (E)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          </svg>
+          <span>ลบ</span>
+        </button>
+      </div>
+
+      <div class="header-sep"></div>
+
+      <!-- View Toggle -->
+      <div class="view-toggle-group">
+        <button class="view-btn active" id="btn-2d">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="2" y="2" width="16" height="16"/>
+            <line x1="2" y1="10" x2="18" y2="10"/>
+            <line x1="10" y1="2" x2="10" y2="18"/>
+          </svg>
+          2D แปลน
+        </button>
+        <button class="view-btn" id="btn-3d">
+          <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M10 2L2 6.5l8 4.5 8-4.5L10 2zM2 13.5l8 4.5 8-4.5M2 10l8 4.5 8-4.5"/>
+          </svg>
+          3D มุมมอง
+        </button>
+      </div>
+
+      <div class="header-sep"></div>
+
+      <!-- Actions -->
+      <div class="header-actions">
+        <button class="action-btn" id="btn-undo" title="เลิกทำ (Ctrl+Z)" disabled>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7v6h6M3 13C5.6 7.6 11 4 17 4c3.3 0 6 2.7 6 6s-2.7 6-6 6H9"/>
+          </svg>
+        </button>
+        <button class="action-btn" id="btn-redo" title="ทำซ้ำ (Ctrl+Y)" disabled>
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 7v6h-6M21 13C18.4 7.6 13 4 7 4c-3.3 0-6 2.7-6 6s2.7 6 6 6h8"/>
+          </svg>
+        </button>
+        <button class="action-btn" id="btn-clear" title="ล้างทั้งหมด">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+          </svg>
+        </button>
+        <button class="action-btn primary" id="btn-export">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          ส่งออก PNG
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <main class="app-main">
+
+    <!-- LEFT SIDEBAR: Furniture Catalog -->
+    <aside class="sidebar sidebar-left">
+      <div class="sidebar-header">
+        <span>เฟอร์นิเจอร์</span>
+        <input type="search" id="furniture-search" placeholder="ค้นหา..." class="furniture-search">
+      </div>
+      <div id="furniture-catalog" class="furniture-catalog"></div>
+    </aside>
+
+    <!-- CENTER: Canvas Area -->
+    <div class="canvas-area" id="canvas-area">
+
+      <!-- 2D Canvas -->
+      <canvas id="canvas-2d"></canvas>
+
+      <!-- 3D Container -->
+      <div id="container-3d" class="hidden"></div>
+
+      <!-- Placement hint -->
+      <div class="placement-hint hidden" id="placement-hint">
+        คลิกบนแปลนเพื่อวางเฟอร์นิเจอร์ · กด <kbd>R</kbd> หมุน · <kbd>Esc</kbd> ยกเลิก
+      </div>
+
+      <!-- Canvas Controls -->
+      <div class="canvas-controls">
+        <button class="ctrl-btn" id="btn-zoom-in" title="ซูมเข้า (+)">+</button>
+        <span class="zoom-label" id="zoom-display">100%</span>
+        <button class="ctrl-btn" id="btn-zoom-out" title="ซูมออก (-)">−</button>
+        <button class="ctrl-btn" id="btn-fit" title="พอดีหน้าจอ (F)">⊡</button>
+        <div class="ctrl-sep"></div>
+        <label class="toggle-label" title="สแนปกริด (G)">
+          <input type="checkbox" id="snap-toggle" checked>
+          <span class="toggle-track"></span>
+          <span class="toggle-text">Snap</span>
+        </label>
+      </div>
+
+      <!-- 3D Controls hint -->
+      <div class="view3d-hint hidden" id="view3d-hint">
+        🖱 ลากหมุน · กลิ้งซูม · Shift+ลากเลื่อน
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span id="status-pos">X: 0, Y: 0</span>
+        <span class="dot">·</span>
+        <span id="status-grid">กริด: 50ซม.</span>
+        <span class="dot">·</span>
+        <span id="status-hint">เลือกเครื่องมือหรือวาดห้องเพื่อเริ่มต้น</span>
+        <span class="dot">·</span>
+        <span id="status-count">0 องค์ประกอบ</span>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR: Properties -->
+    <aside class="sidebar sidebar-right">
+      <div class="sidebar-header">
+        <span>คุณสมบัติ</span>
+      </div>
+
+      <div class="no-selection" id="no-sel-msg">
+        <div class="no-sel-illustration">
+          <svg viewBox="0 0 80 80" width="60" height="60" fill="none" opacity="0.3">
+            <rect x="10" y="10" width="60" height="60" rx="4" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4"/>
+            <path d="M30 40h20M40 30v20" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </div>
+        <p>เลือกองค์ประกอบ<br>เพื่อแก้ไขคุณสมบัติ</p>
+      </div>
+
+      <div class="props-panel hidden" id="props-panel">
+        <div class="prop-section">
+          <div class="prop-row">
+            <label class="prop-label">ชื่อ</label>
+            <input type="text" id="prop-label" class="prop-input" placeholder="ชื่อ...">
+          </div>
+          <div class="prop-row prop-row-2col">
+            <div>
+              <label class="prop-label">X (ซม.)</label>
+              <input type="number" id="prop-x" class="prop-input" step="1">
+            </div>
+            <div>
+              <label class="prop-label">Y (ซม.)</label>
+              <input type="number" id="prop-y" class="prop-input" step="1">
+            </div>
+          </div>
+          <div class="prop-row prop-row-2col" id="prop-size-row">
+            <div>
+              <label class="prop-label">กว้าง (ซม.)</label>
+              <input type="number" id="prop-width" class="prop-input" step="1" min="10">
+            </div>
+            <div>
+              <label class="prop-label">ลึก (ซม.)</label>
+              <input type="number" id="prop-depth" class="prop-input" step="1" min="10">
+            </div>
+          </div>
+          <div class="prop-row" id="prop-rotation-row">
+            <label class="prop-label">หมุน</label>
+            <div class="rotation-btns">
+              <button class="rot-btn" data-deg="0">0°</button>
+              <button class="rot-btn" data-deg="90">90°</button>
+              <button class="rot-btn" data-deg="180">180°</button>
+              <button class="rot-btn" data-deg="270">270°</button>
+            </div>
+          </div>
+          <div class="prop-row" id="prop-color-row">
+            <label class="prop-label">สี</label>
+            <div class="color-row">
+              <input type="color" id="prop-color" class="prop-color-input">
+              <span id="prop-color-hex" class="color-hex">#ffffff</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dimensions display -->
+        <div class="prop-section" id="dim-section">
+          <div class="dim-header">ขนาด</div>
+          <div class="dim-grid">
+            <span class="dim-lbl">กว้าง</span><span class="dim-val" id="dim-w">—</span>
+            <span class="dim-lbl">ยาว</span><span class="dim-val" id="dim-d">—</span>
+            <span class="dim-lbl">พื้นที่</span><span class="dim-val" id="dim-a">—</span>
+          </div>
+        </div>
+
+        <!-- Delete -->
+        <div class="prop-section">
+          <button class="delete-btn" id="btn-delete">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+            </svg>
+            ลบองค์ประกอบนี้
+          </button>
+        </div>
+      </div>
+
+      <!-- Room stats summary -->
+      <div class="room-summary" id="room-summary">
+        <div class="summary-header">สรุปแปลน</div>
+        <div class="summary-row">
+          <span>ห้องทั้งหมด</span><span id="sum-rooms">0</span>
+        </div>
+        <div class="summary-row">
+          <span>เฟอร์นิเจอร์</span><span id="sum-furniture">0</span>
+        </div>
+        <div class="summary-row">
+          <span>พื้นที่รวม</span><span id="sum-area">0 ตร.ม.</span>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
